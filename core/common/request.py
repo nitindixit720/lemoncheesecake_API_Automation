@@ -8,7 +8,7 @@ def print_request_details(url, headers, params=None, data=None):
     caller_function_name = inspect.stack()[1][3]
     lcc.log_info("{} request to --> {}".format(caller_function_name.upper(), url))
     lcc.log_info("Headers: {}".format(str(headers)))
-    if caller_function_name is "get":
+    if caller_function_name == "get":
         lcc.log_info("Params: {}".format(str(params)))
     elif caller_function_name in ["post", "put", "patch"]:
         lcc.log_info("Payload: {}".format(str(data)))

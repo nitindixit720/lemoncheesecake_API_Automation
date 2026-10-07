@@ -2,14 +2,18 @@
 
 # Environment setup
 ##TODO take environment outside
-virtualenv -p python3 venv
+python3 -m venv venv
 source venv/bin/activate
 pip install -r requirement.txt
-#pip freeze |grep slacker
 export TEST_ENV=staging
 export PYTHONPATH=.
 export SLACK_AUTH_TOKEN="Provide SLACK_AUTH_TOKEN"
 export SLACK_CHANNEL="Provide SLACK_CHANNEL name"
+# Required by scripts/upload_report_to_s3.py (boto3 reads AWS credentials
+# from AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY automatically, do not
+# hardcode them here or anywhere in the repo).
+export S3_BUCKET_NAME="Provide S3 bucket name"
+export S3_HOST="s3.ap-south-1.amazonaws.com"
 export PROJECT_NAME=${PWD##*/}
 echo $PROJECT_NAME
 
@@ -27,17 +31,14 @@ fi
 echo "Creating directory reports/$REPORT_DIR_NAME"
 mkdir -p reports/${REPORT_DIR_NAME}
 
-SERVER_URL="S3 server URL"
-
 # S3 upload
-FINAL_PREFIX=$SERVER_URL$S3_PREFIX
+FINAL_PREFIX="https://$S3_HOST/$S3_BUCKET_NAME/$S3_PREFIX"
 
 # Run code
 TEST_SKIP_MESSAGE="*[$TEST_ENV] One or more services required for API tests are unavailable, skipping tests.* :sleeping:"
 TEST_FAIL_MESSAGE="*[$TEST_ENV] One or more tests from one or more suites have failed.* :cry:"
 TEST_PASS_MESSAGE="*[$TEST_ENV] All tests from all suites have passed.* :dancing_panda:"
-export SLACK_MESSAGE_TEMPLATE="[$TEST_ENV] genie-api-test: {passed}/{enabled} passed | $FINAL_PREFIX/report/report.html"
-lcc run --enable-reporting slack console html --exit-error-on-failure
+lcc run --reporting console html --exit-error-on-failure
 export CURRENT_SUITE_EXECUTION_STATUS=$?
 python scripts/upload_report_to_s3.py report/report.html
 python scripts/upload_report_to_s3.py report/report.js
