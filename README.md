@@ -1,8 +1,25 @@
 # lemoncheesecake API Automation
 
+![Python](https://img.shields.io/badge/python-3.9%2B-blue)
+![lemoncheesecake](https://img.shields.io/badge/lemoncheesecake-1.15.0-green)
+![License: MIT](https://img.shields.io/badge/license-MIT-lightgrey)
+
 API test automation framework built on [lemoncheesecake](https://lemoncheesecake.io), a Python test
-storytelling framework. It wraps `requests` with logging/response-time helpers, organizes suites by
-service, and can publish results to Slack and an HTML report archive on S3.
+storytelling framework. It wraps `requests` with logging and response-time helpers, organizes test
+suites by service, and can publish results to Slack and an HTML report archive on S3.
+
+## Table of contents
+
+- [Requirements](#requirements)
+- [Setup](#setup)
+- [Running the tests](#running-the-tests)
+- [Example test run](#example-test-run)
+- [CI / full pipeline run](#ci--full-pipeline-run)
+- [Project structure](#project-structure)
+- [API testing conventions](#api-testing-conventions-used-in-this-framework)
+- [Example suite](#example-suite)
+- [Dependency notes](#dependency-notes-2026-10-modernization)
+- [License](#license)
 
 ## Requirements
 
@@ -12,8 +29,8 @@ service, and can publish results to Slack and an HTML report archive on S3.
 ## Setup
 
 ```bash
-git clone <repo-url>
-cd Lcc
+git clone https://github.com/nitindixit720/lemoncheesecake_API_Automation.git
+cd lemoncheesecake_API_Automation
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirement.txt
@@ -29,11 +46,40 @@ lcc run --reporting console html --exit-error-on-failure
 
 - `--reporting` selects which reporting backends to enable for the run (`console`, `html`, `json`, ...).
 - `--exit-error-on-failure` makes the process exit non-zero when any test doesn't pass, for CI gating.
-- An HTML report is written to `report/report.html`.
+- An HTML report is written to `report/report.html` — open it in a browser for a full breakdown of
+  each test, its steps, and logged request/response details.
+- Run a single suite with a path filter, e.g. `lcc run suites.httpbin_demo`.
 
-Run a single suite or test with a path filter, e.g. `lcc run suites.httpbin_demo`.
+## Example test run
 
-### CI / full pipeline run
+Actual output from running `lcc run --reporting console html --exit-error-on-failure` against the
+suites in this repo:
+
+```
+========================== httpbin_demo.HttpbinDemo ===========================
+ 1 # test_get_request            (GET request echoes back the query params...)      OK
+ 2 # test_post_request           (POST request echoes back the form data...)        OK
+ 3 # test_put_request            (PUT request echoes back the data that was sent)   OK
+ 4 # test_patch_request          (PATCH request echoes back the data that was sent) OK
+ 5 # test_delete_request         (DELETE request returns a successful response)     OK
+ 6 # test_url_returns_not_found  (Requesting a URL that returns 404 ...)            OK
+ 7 # test_url_redirect           (A URL configured to redirect resolves ...)        OK
+
+Statistics :
+ * Duration: 8s
+ * Tests: 7
+ * Successes: 7 (100%)
+ * Failures: 0
+
+HTML report : file:///path/to/repo/report/report.html
+```
+
+(Test names/descriptions trimmed for width; raw terminal output includes per-test progress lines.)
+No image screenshots are included here — generating one requires a browser, which isn't available
+in the environment used to write this README. Run the command above and open
+`report/report.html` in a browser to see the full interactive report with per-step logs.
+
+## CI / full pipeline run
 
 `entrypoint.sh` wraps the same `lcc run` invocation with: venv setup, a timestamped report
 directory, an S3 upload of the report via `scripts/upload_report_to_s3.py`, and a pass/fail
@@ -58,14 +104,14 @@ Run it with:
 ## Project structure
 
 ```
-project.py              lemoncheesecake project definition (suites/fixtures discovery)
-common/endpoints.py      API base URL and endpoint path constants
-core/common/request.py   requests wrapper: logs request/response, flags slow responses (>2s)
-core/common/singleton.py Singleton base class
-core/utils/utils.py      Shared test-data generators and response assertion helpers
-suites/                  Test suites (one module/class per service or feature area)
-scripts/                 CI helpers: Slack notification, S3 report upload
-entrypoint.sh            Full CI pipeline: install, run tests, upload report, notify Slack
+project.py                lemoncheesecake project definition (suites/fixtures discovery)
+common/endpoints.py        API base URL and endpoint path constants
+core/common/request.py     requests wrapper: logs request/response, flags slow responses (>2s)
+core/common/singleton.py   Singleton base class
+core/utils/utils.py        Shared test-data generators and response assertion helpers
+suites/                    Test suites (one module/class per service or feature area)
+scripts/                   CI helpers: Slack notification, S3 report upload
+entrypoint.sh              Full CI pipeline: install, run tests, upload report, notify Slack
 ```
 
 ## API testing conventions used in this framework
@@ -121,3 +167,7 @@ this update:
 
 All of the above were verified by installing into a clean virtual environment and running the full
 suite (`lcc run --reporting console html --exit-error-on-failure`) end to end -- 7/7 tests pass.
+
+## License
+
+Released under the [MIT License](LICENSE).
